@@ -1,5 +1,6 @@
 #include "mbed.h"
 #include "mbed_rpc.h"
+#include "stm32l475e_iot01_accelero.h"
 
 
 static BufferedSerial pc(STDIO_UART_TX, STDIO_UART_RX);
@@ -7,10 +8,11 @@ static BufferedSerial xbee(D1, D0);
 
 EventQueue queue(32 * EVENTS_EVENT_SIZE);
 Thread t;
+int16_t pDataXYZ[3] = {0};
 
-RpcDigitalOut myled1(LED1,"myled1");
-RpcDigitalOut myled2(LED2,"myled2");
-RpcDigitalOut myled3(LED3,"myled3");
+void accelerometer(Arguments *in, Reply *out);
+RPCFunction rpcAccelerometer(&accelerometer,"accelerometer");
+
 
 void xbee_rx_interrupt(void);
 void xbee_rx(void);
@@ -18,7 +20,7 @@ void reply_messange(char *xbee_reply, char *messange);
 void check_addr(char *xbee_reply, char *messenger);
 
 int main(){
-
+    BSP_ACCELERO_Init();
    pc.set_baud(9600);
 
    char xbee_reply[4];
@@ -117,4 +119,13 @@ void check_addr(char *xbee_reply, char *messenger){
    xbee_reply[1] = '\0';
    xbee_reply[2] = '\0';
    xbee_reply[3] = '\0';
+}
+
+void accelerometer(Arguments *in, Reply *out){
+    while(1){
+        BSP_ACCELERO_AccGetXYZ(pDataXYZ);
+        printf("%d, %d, %d\n", pDataXYZ[0], pDataXYZ[1], pDataXYZ[2]);
+
+        ThisThread::sleep_for(500ms);
+    }
 }
